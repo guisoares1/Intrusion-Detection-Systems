@@ -60,10 +60,8 @@ model.add(Activation('sigmoid'))
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 checkpointer = callbacks.ModelCheckpoint(filepath="kddresults\\dnn3layer\\checkpoint-{epoch:02d}.keras", verbose=1, save_best_only=True, monitor='loss')
 csv_logger = CSVLogger('kddresults\\dnn3layer\\training_set_dnnanalysis.csv', separator=',', append=False)
-model.fit(X_train, y_train, batch_size=batch_size, epochs=100, callbacks=[checkpointer, csv_logger])
+model.fit(X_train, y_train, batch_size=batch_size, epochs=1000, callbacks=[checkpointer, csv_logger])
 model.save("kddresults\\dnn3layer\\dnn3layer_model.keras")
-
-
 
 
 
