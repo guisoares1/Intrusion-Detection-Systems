@@ -16,6 +16,7 @@ from sklearn.preprocessing import Normalizer
 import h5py
 from keras import callbacks
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, CSVLogger
+from keras.optimizers import Adam
 
 # Criar diretório se ele não existir
 output_dir = os.path.join('kddresultsModify', 'dnn3layer')
@@ -57,22 +58,22 @@ else:
     # Definir a rede neural
     model = Sequential()
     model.add(Dense(1024, input_dim=41, activation='relu'))
-    model.add(Dropout(0.01))
-    model.add(Dense(768, activation='relu'))
-    model.add(Dropout(0.01))
+    model.add(Dropout(0.1))
     model.add(Dense(512, activation='relu'))
-    model.add(Dropout(0.01))
+    model.add(Dropout(0.1))
+    model.add(Dense(256, activation='relu'))
+    model.add(Dropout(0.1))
     model.add(Dense(1))
     model.add(Activation('sigmoid'))
-
     # Compilar o modelo
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    optimizer = Adam(learning_rate=0.0001)
+    model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     initial_epoch = 0
 
 # Callbacks
 checkpointer = ModelCheckpoint(filepath=os.path.join('kddresultsModify', 'dnn3layer', 'checkpoint-{epoch:02d}.keras'), verbose=1, save_best_only=True, monitor='loss')
 csv_logger = CSVLogger(os.path.join('kddresultsModify', 'dnn3layer', 'training_set_dnnanalysis.csv'), separator=',', append=False)
-early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
+early_stopping = EarlyStopping(monitor='val_loss', patience=20, verbose=1)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.001, verbose=1)
 
 # Treinar o modelo com checkpoints
