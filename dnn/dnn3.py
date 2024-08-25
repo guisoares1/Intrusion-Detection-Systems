@@ -5,7 +5,7 @@ import os
 import numpy as np
 np.random.seed(1337)  # para reprodutibilidade
 from keras.preprocessing import sequence
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Activation, Embedding
 from keras.layers import LSTM, SimpleRNN, GRU
 from keras.datasets import imdb
@@ -21,7 +21,6 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, C
 output_dir = 'kddresults\\dnn3layer'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
-
 
 traindata = pd.read_csv('kdd\\binary\\Training.csv', header=None)
 testdata = pd.read_csv('kdd\\binary\\Testing.csv', header=None)
@@ -45,26 +44,40 @@ X_test = np.array(testT)
 
 batch_size = 64
 
-# 1. define the network
-model = Sequential()
-model.add(Dense(1024, input_dim=41, activation='relu'))
-model.add(Dropout(0.01))
-model.add(Dense(768, activation='relu'))
-model.add(Dropout(0.01))
-model.add(Dense(512, activation='relu'))
-model.add(Dropout(0.01))
-model.add(Dense(1))
-model.add(Activation('sigmoid'))
+# Verificar se existe um checkpoint salvo
+checkpoint_dir = 'kddresults\\dnn3layer'
+checkpoints = [f for f in os.listdir(checkpoint_dir) if f.startswith('checkpoint')]
+if checkpoints:
+    # Carregar o último checkpoint salvo
+    latest_checkpoint = max(checkpoints, key=lambda x: int(x.split('-')[1].split('.')[0]))
+    model = load_model(os.path.join(checkpoint_dir, latest_checkpoint))
+    initial_epoch = int(latest_checkpoint.split('-')[1].split('.')[0])
+    print(f"Carregando o modelo do checkpoint: {latest_checkpoint}")
+else:
+    # Definir a rede neural
+    model = Sequential()
+    model.add(Dense(1024, input_dim=41, activation='relu'))
+    model.add(Dropout(0.01))
+    model.add(Dense(768, activation='relu'))
+    model.add(Dropout(0.01))
+    model.add(Dense(512, activation='relu'))
+    model.add(Dropout(0.01))
+    model.add(Dense(1))
+    model.add(Activation('sigmoid'))
 
-# try using different optimizers and different optimizer configs
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-checkpointer = callbacks.ModelCheckpoint(filepath="kddresults\\dnn3layer\\checkpoint-{epoch:02d}.keras", verbose=1, save_best_only=True, monitor='loss')
+    # Compilar o modelo
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    initial_epoch = 0
+
+# Callbacks
+checkpointer = ModelCheckpoint(filepath="kddresults\\dnn3layer\\checkpoint-{epoch:02d}.keras", verbose=1, save_best_only=True, monitor='loss')
 csv_logger = CSVLogger('kddresults\\dnn3layer\\training_set_dnnanalysis.csv', separator=',', append=False)
-model.fit(X_train, y_train, batch_size=batch_size, epochs=1000, callbacks=[checkpointer, csv_logger])
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.001, verbose=1)
+
+# Treinar o modelo com checkpoints
+model.fit(X_train, y_train, batch_size=batch_size, epochs=1000, initial_epoch=initial_epoch,
+          callbacks=[checkpointer, csv_logger, early_stopping, reduce_lr], 
+          validation_split=0.2)
+
 model.save("kddresults\\dnn3layer\\dnn3layer_model.keras")
-
-
-
-
-
-
