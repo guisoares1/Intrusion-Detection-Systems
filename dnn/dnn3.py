@@ -17,13 +17,17 @@ import h5py
 from keras import callbacks
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, CSVLogger
 
+# Verificar se a GPU está disponível
+import tensorflow as tf
+print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+
 # Criar diretório se ele não existir
-output_dir = 'kddresults\\dnn3layer'
+output_dir = os.path.join('kddresults', 'dnn3layer')
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-traindata = pd.read_csv('kdd\\binary\\Training.csv', header=None)
-testdata = pd.read_csv('kdd\\binary\\Testing.csv', header=None)
+traindata = pd.read_csv(os.path.join('kdd', 'binary', 'Training.csv'), header=None)
+testdata = pd.read_csv(os.path.join('kdd', 'binary', 'Testing.csv'), header=None)
 
 X = traindata.iloc[:, 1:42]
 Y = traindata.iloc[:, 0]
@@ -45,7 +49,7 @@ X_test = np.array(testT)
 batch_size = 64
 
 # Verificar se existe um checkpoint salvo
-checkpoint_dir = 'kddresults\\dnn3layer'
+checkpoint_dir = os.path.join('kddresults', 'dnn3layer')
 checkpoints = [f for f in os.listdir(checkpoint_dir) if f.startswith('checkpoint')]
 if checkpoints:
     # Carregar o último checkpoint salvo
@@ -70,14 +74,14 @@ else:
     initial_epoch = 0
 
 # Callbacks
-checkpointer = ModelCheckpoint(filepath="kddresults\\dnn3layer\\checkpoint-{epoch:02d}.keras", verbose=1, save_best_only=True, monitor='loss')
-csv_logger = CSVLogger('kddresults\\dnn3layer\\training_set_dnnanalysis.csv', separator=',', append=False)
+checkpointer = ModelCheckpoint(filepath=os.path.join('kddresults', 'dnn3layer', 'checkpoint-{epoch:02d}.keras'), verbose=1, save_best_only=True, monitor='loss')
+csv_logger = CSVLogger(os.path.join('kddresults', 'dnn3layer', 'training_set_dnnanalysis.csv'), separator=',', append=False)
 early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.001, verbose=1)
 
 # Treinar o modelo com checkpoints
 model.fit(X_train, y_train, batch_size=batch_size, epochs=1000, initial_epoch=initial_epoch,
-          callbacks=[checkpointer, csv_logger, early_stopping, reduce_lr], 
-          validation_split=0.2)
+            callbacks=[checkpointer, csv_logger, early_stopping, reduce_lr], 
+            validation_split=0.2)
 
-model.save("kddresults\\dnn3layer\\dnn3layer_model.keras")
+model.save(os.path.join('kddresults', 'dnn3layer', 'dnn3layer_model.keras'))
