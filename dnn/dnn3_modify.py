@@ -58,17 +58,16 @@ else:
     # Definir a rede neural
     model = Sequential()
     model.add(Dense(1024, input_dim=41, activation='relu'))
-    model.add(Dropout(0.1))
+    model.add(Dropout(0.01))
+    model.add(Dense(768, activation='relu'))
+    model.add(Dropout(0.01))
     model.add(Dense(512, activation='relu'))
-    model.add(Dropout(0.1))
-    model.add(Dense(256, activation='relu'))
-    model.add(Dropout(0.1))
+    model.add(Dropout(0.01))
     model.add(Dense(1))
     model.add(Activation('sigmoid'))
     # Compilar o modelo
-    optimizer = Adam(learning_rate=0.0001)
-    model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-    initial_epoch = 0
+    optimizer = Adam(learning_rate=0.015)
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 # Callbacks
 checkpointer = ModelCheckpoint(filepath=os.path.join('kddresultsModify', 'dnn3layer', 'checkpoint-{epoch:02d}.keras'), verbose=1, save_best_only=True, monitor='loss')
@@ -77,8 +76,6 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=20, verbose=1)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.001, verbose=1)
 
 # Treinar o modelo com checkpoints
-model.fit(X_train, y_train, batch_size=batch_size, epochs=1000, initial_epoch=initial_epoch,
-            callbacks=[checkpointer, csv_logger, early_stopping, reduce_lr], 
-            validation_split=0.2)
+model.fit(X_train, y_train, batch_size=batch_size, epochs=1000, callbacks=[checkpointer, csv_logger])
 
 model.save(os.path.join('kddresultsModify', 'dnn3layer', 'dnn3layer_model.keras'))
